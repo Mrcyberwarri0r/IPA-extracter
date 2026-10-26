@@ -103,6 +103,37 @@ class TestMachOContract(unittest.TestCase):
         struct.pack_into("<I", b, r["cryptidFileOff"], 0)
         self.assertEqual(self.parse(bytes(b))["cryptid"], 0)
 
+    def test_overlay_and_clear_mechanics(self):
+        """Mirror of dump.js decryptModule's buffer ops: overlay the decrypted
+        pages over the encrypted region and clear cryptid, touching nothing else.
+        Verified against a real 34 MB App Store binary in-session; this locks the
+        mechanics into CI. Here cryptidFileOff (5392-style) < cryptoff, exactly
+        as in a real FairPlay binary, so clearing cryptid changes a byte *before*
+        the region — which must be allowed."""
+        # Build a header whose cryptid field precedes the encrypted region.
+        cryptoff, cryptsize = 16384, 4096
+        hdr = struct.pack("<IiiIIIII", self.MH_MAGIC_64, 0x0100000c, 0, 2, 1, 0, 0, 0)
+        enc = struct.pack("<IIIIII", self.LC_ENCRYPTION_INFO_64, 24, cryptoff, cryptsize, 1, 0)
+        head = hdr + enc
+        raw = head + b"\xAA" * (cryptoff - len(head)) + b"\xEE" * cryptsize + b"\xBB" * 256
+        r = self.parse(raw)
+        self.assertEqual((r["cryptoff"], r["cryptsize"], r["cryptid"]), (cryptoff, cryptsize, 1))
+        cidoff = r["cryptidFileOff"]
+        self.assertLess(cidoff, cryptoff)
+
+        decrypted = bytes((i * 7 + 3) & 0xFF for i in range(cryptsize))
+        out = bytearray(raw)
+        out[cryptoff:cryptoff + cryptsize] = decrypted        # Uint8Array.set(...)
+        struct.pack_into("<I", out, cidoff, 0)                # DataView.setUint32(...,0)
+        out = bytes(out)
+
+        self.assertEqual(out[cryptoff:cryptoff + cryptsize], decrypted)
+        self.assertEqual(self.parse(out)["cryptid"], 0)
+        self.assertEqual(len(out), len(raw))
+        self.assertEqual(out[:cidoff], raw[:cidoff])
+        self.assertEqual(out[cidoff + 4:cryptoff], raw[cidoff + 4:cryptoff])
+        self.assertEqual(out[cryptoff + cryptsize:], raw[cryptoff + cryptsize:])
+
 
 class TestCliParser(unittest.TestCase):
     def test_subcommands(self):

@@ -144,6 +144,25 @@ those pages in RAM when the app runs. The bundled agent ([`iph/scripts/dump.js`]
 The agent uses only core Frida APIs (`Process`, `Module`, `Memory`, `File`) plus libc —
 **no `frida-objc-bridge`** — so it runs unchanged on Frida 16 and 17+.
 
+## Validation
+
+What has been exercised, and how (so nothing rests on claims alone):
+
+| Path | Status | Evidence |
+|---|---|---|
+| Device / app discovery | ✅ verified live | listed apps on a physical iPhone 15 Pro (iOS 18.7.2) |
+| `install` a signed IPA | ✅ verified live | a real App Store IPA installed end-to-end via pymobiledevice3 on a physical device |
+| `extract --method appstore` | ✅ verified live | real IPAs downloaded and validated (well-formed `Payload/*.app`, code signature, FairPlay `SC_Info`) |
+| Frida agent on Frida 17 | ✅ verified live | `enumerate` / `readFile` / `decryptModule` run against a real Mach-O; `Memory.readByteArray` on a loaded module returns correct bytes |
+| Mach-O parse + `cryptid` patch | ✅ verified | parser locates the real FairPlay region on a 34 MB App Store binary; overlay + `cryptid`-clear are byte-exact; covered by CI |
+| **End-to-end decrypt on a jailbroken device** | ⚠️ **not run here** | requires a jailbroken device; see below |
+
+The FairPlay-decrypted pages only exist in a device's RAM (the key lives in the
+Secure Enclave), so the *composite* decrypt-and-repackage flow can only be exercised on a
+jailbroken device running `frida-server`. Every individual mechanism it relies on is
+verified above; the full run on jailbroken hardware is the one step this development
+machine could not reproduce.
+
 ## Troubleshooting
 
 | Symptom | Fix |
