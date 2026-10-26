@@ -1,24 +1,11 @@
-<h1 align="center">iph — iOS IPA Helper</h1>
+# iph — iOS IPA Helper
 
-<p align="center">
-  Install and extract <code>.ipa</code> files from <b>jailbroken and non-jailbroken</b> iOS devices, from one command line.
-</p>
+Install and extract `.ipa` files from jailbroken and non-jailbroken iOS devices, from
+the command line. It wraps the tools you'd otherwise juggle by hand — Frida,
+pymobiledevice3, libimobiledevice and ipatool — and picks the right one for the device
+that's plugged in.
 
-<p align="center">
-  <a href="https://github.com/Mrcyberwarri0r/IPA-extracter/actions"><img src="https://github.com/Mrcyberwarri0r/IPA-extracter/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="Python 3.8+">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
-</p>
-
----
-
-`iph` wraps the best tools in the iOS tooling ecosystem — [Frida](https://frida.re),
-[pymobiledevice3](https://github.com/doronz88/pymobiledevice3),
-[libimobiledevice](https://libimobiledevice.org) and [ipatool](https://github.com/majd/ipatool)
-— behind one consistent CLI, and picks the right backend for the device in front of it.
-
-```console
+```
 $ iph devices
 00008130-00124DC90A62001C  iPhone 15 Pro  iPhone16,1  iOS 18.7.2  usb
 
@@ -27,188 +14,129 @@ com.burbn.instagram   453.0.0   Instagram
 net.whatsapp.WhatsApp 26.41.74  WhatsApp
 ...
 
-$ iph extract com.example.myapp        # → decrypted, repackaged .ipa (Frida)
-$ iph extract com.example.app --method appstore   # → download from the App Store
-$ iph install ./MyApp.ipa              # → install a signed .ipa
+$ iph extract com.example.myapp                  # decrypt a live app -> clean .ipa
+$ iph extract com.example.app --method appstore  # download from the App Store
+$ iph install ./MyApp.ipa                        # install a signed .ipa
 ```
-
-## Features
-
-- 📱 **Install** a signed IPA to any device (jailbroken or not).
-- 🔓 **Extract + decrypt** a live app into a clean, installable IPA using an in-memory
-  FairPlay decryption agent — **bridge-free, works on Frida 16 and 17+**.
-- ☁️ **Download** IPAs from the App Store with your own Apple ID.
-- 🔌 **Auto-selects backends** (pymobiledevice3 → libimobiledevice) and **auto-mounts the
-  Developer Disk Image** on iOS 17+.
-- 🧪 Clear, actionable errors instead of raw stack traces.
 
 ## What works where
 
-| Capability                                       | Jailbroken      | Non-jailbroken              |
-|--------------------------------------------------|:---------------:|:---------------------------:|
-| List devices / apps                              | ✅              | ✅                          |
-| **Install** a signed IPA                         | ✅              | ✅                          |
-| **Extract → decrypted IPA** (Frida)              | ✅ any app      | ⚠️ apps you signed only ¹   |
-| **Download** encrypted IPA (`--method appstore`) | ✅              | ✅                          |
+| Capability                                       | Jailbroken   | Non-jailbroken            |
+|--------------------------------------------------|:------------:|:-------------------------:|
+| List devices / apps                              | yes          | yes                       |
+| Install a signed IPA                             | yes          | yes                       |
+| Extract + decrypt an installed app (Frida)       | yes, any app | only apps you signed¹     |
+| Download the IPA from the App Store              | yes          | yes                       |
 
-> ¹ On a non-jailbroken device, Frida attaches through Apple's Developer Disk Image. That
-> path only reaches apps carrying the `get-task-allow` entitlement — i.e. apps **you**
-> signed (development / ad-hoc / sideloaded). App Store apps are not debuggable there, so
-> they **cannot be decrypted without a jailbreak**. For those, use `--method appstore` to
-> pull Apple's (still-encrypted) IPA, or extract on a jailbroken device. `iph` tells you
-> this clearly if you try.
+¹ On a stock device Frida attaches through Apple's Developer Disk Image, which only lets
+you touch apps that carry the `get-task-allow` entitlement — i.e. apps you built or
+sideloaded yourself. App Store apps aren't debuggable there and can't be decrypted without
+a jailbreak; use `--method appstore` for those, or extract on a jailbroken device.
 
 ## Requirements
 
-- **macOS or Linux**, Python **3.8+**
-- A USB cable and a device you have **trusted** (`Trust This Computer`)
-- Optional CLI helpers (install via Homebrew):
+- macOS or Linux, Python 3.8+
+- A device trusted over USB (`Trust This Computer`)
+- Homebrew helpers:
 
-  ```bash
+  ```
   brew install libimobiledevice ideviceinstaller ipatool sshpass
   ```
 
-- For **extraction on a jailbroken device**: `frida-server` running as root (install the
-  **Frida** package from Sileo/Cydia/Zebra).
-- For **non-jailbroken iOS 16+**: enable *Developer Mode*
-  (Settings → Privacy & Security → Developer Mode) and keep the device unlocked.
+- Jailbroken extraction: `frida-server` running on the device (install the Frida package
+  from Sileo/Zebra).
+- Non-jailbroken, iOS 16+: turn on Developer Mode (Settings → Privacy & Security →
+  Developer Mode) and keep the device unlocked.
 
-## Installation
+## Install
 
-**Option 1 — pipx (recommended, isolated):**
-```bash
-pipx install git+https://github.com/Mrcyberwarri0r/IPA-extracter
-iph doctor
 ```
-
-**Option 2 — pip:**
-```bash
-pip install git+https://github.com/Mrcyberwarri0r/IPA-extracter
-```
-
-**Option 3 — from source with a bundled venv:**
-```bash
 git clone https://github.com/Mrcyberwarri0r/IPA-extracter
 cd IPA-extracter
 ./install.sh
-./bin/iph doctor          # or: ln -s "$PWD/bin/iph" /opt/homebrew/bin/iph
+./bin/iph doctor
 ```
 
-Run `iph doctor` any time to see which backends and devices are available.
+Or install it as a command with pip / pipx:
+
+```
+pipx install git+https://github.com/Mrcyberwarri0r/IPA-extracter
+```
+
+`iph doctor` shows which backends and devices are available.
 
 ## Usage
 
-### Devices & apps
-```bash
-iph devices                         # UDID, name, model, iOS, connection
-iph apps                            # user apps (--all for system apps, --json for scripting)
-iph --udid <UDID> apps              # select a device when several are attached
+Devices and apps:
+
+```
+iph devices
+iph apps                 # --all for system apps, --json for scripting
+iph --udid <UDID> apps   # when more than one device is attached
 ```
 
-### Install
-```bash
-iph install ./App.ipa               # install, or upgrade in place
+Install a signed IPA (it has to be signed with something the device accepts — App Store,
+a development/ad-hoc cert, or enterprise; this doesn't sign for you):
+
+```
+iph install ./App.ipa
 iph install ./App.ipa --upgrade
 ```
-The IPA must already be signed with something the device accepts (App Store, a
-development/ad-hoc cert, or enterprise). `iph` does not sign — it installs and reports
-exactly why a device rejected an invalid IPA. Backends: **pymobiledevice3** → **ideviceinstaller**.
 
-### Extract — Frida (decrypted IPA)
-Decrypts the app in memory and repackages a clean, installable `.ipa`.
-```bash
-iph extract com.example.app                   # by bundle id
-iph extract Instagram                          # by display name
+Extract and decrypt a live app into a clean, installable IPA:
+
+```
+iph extract com.example.app
+iph extract Instagram
 iph extract com.example.app -o ./out/MyApp.ipa
-iph extract com.example.app --attach           # attach to a running instance
+iph extract com.example.app --attach      # attach instead of spawning
 ```
 
-### Extract — App Store download
-```bash
-ipatool auth login -e you@example.com          # once; interactive 2FA
+Download an IPA from the App Store (encrypted, as Apple ships it):
+
+```
+ipatool auth login -e you@example.com
 iph extract com.example.app --method appstore -o ./downloads
 ```
-Downloads the IPA Apple would deliver to your account. It is **FairPlay-encrypted** (as
-all App Store IPAs are); decryption still requires a Frida dump on a jailbroken device.
 
-## How Frida extraction works
+## How the decryption works
 
 App Store binaries encrypt their `__TEXT` region (FairPlay, `cryptid=1`). The OS decrypts
-those pages in RAM when the app runs. The bundled agent ([`iph/scripts/dump.js`](iph/scripts/dump.js)):
+those pages in memory when the app runs. The Frida agent in `iph/scripts/dump.js` reads
+the decrypted pages back from the running process, rewrites `LC_ENCRYPTION_INFO(_64)` so
+`cryptid=0`, pulls the whole bundle, and repackages it into `Payload/<App>.app` as a
+`.ipa`.
 
-1. Spawns (or attaches to) the target so its binaries map and decrypt.
-2. Reads the decrypted pages back from the live process.
-3. Rewrites `LC_ENCRYPTION_INFO(_64)` to `cryptid=0` and patches the file.
-4. Pulls the whole bundle and repackages `Payload/<App>.app/…` into a `.ipa`.
-
-The agent uses only core Frida APIs (`Process`, `Module`, `Memory`, `File`) plus libc —
-**no `frida-objc-bridge`** — so it runs unchanged on Frida 16 and 17+.
-
-## Validation
-
-What has been exercised, and how (so nothing rests on claims alone):
-
-| Path | Status | Evidence |
-|---|---|---|
-| Device / app discovery | ✅ verified live | listed apps on a physical iPhone 15 Pro (iOS 18.7.2) |
-| `install` a signed IPA | ✅ verified live | a real App Store IPA installed end-to-end via pymobiledevice3 on a physical device |
-| `extract --method appstore` | ✅ verified live | real IPAs downloaded and validated (well-formed `Payload/*.app`, code signature, FairPlay `SC_Info`) |
-| Frida agent on Frida 17 | ✅ verified live | `enumerate` / `readFile` / `decryptModule` run against a real Mach-O; `Memory.readByteArray` on a loaded module returns correct bytes |
-| Mach-O parse + `cryptid` patch | ✅ verified | parser locates the real FairPlay region on a 34 MB App Store binary; overlay + `cryptid`-clear are byte-exact; covered by CI |
-| **End-to-end decrypt on a jailbroken device** | ⚠️ **not run here** | requires a jailbroken device; see below |
-
-The FairPlay-decrypted pages only exist in a device's RAM (the key lives in the
-Secure Enclave), so the *composite* decrypt-and-repackage flow can only be exercised on a
-jailbroken device running `frida-server`. Every individual mechanism it relies on is
-verified above; the full run on jailbroken hardware is the one step this development
-machine could not reproduce.
+The agent sticks to core Frida APIs (`Process`, `Module`, `Memory`, `File`) plus a couple
+of libc calls, so it runs on both Frida 16 and 17 without a compile step.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `no iOS device detected` | Connect USB, unlock, tap **Trust**. Check `iph devices`. |
-| `device is locked` (DDI mount) | Unlock the device and keep it on the Home screen. |
-| `enable Developer Mode` | Settings → Privacy & Security → Developer Mode → on, reboot. |
-| `cannot instrument … not debuggable` | Non-jailbroken + App Store app. Use `--method appstore`, or a jailbroken device. |
+| `no iOS device detected` | Connect over USB, unlock, tap Trust. Check `iph devices`. |
+| `device is locked` | Unlock the device and keep it on the Home screen. |
+| `enable Developer Mode` | Settings → Privacy & Security → Developer Mode, then reboot. |
+| `cannot instrument … not debuggable` | Stock device + App Store app. Use `--method appstore`, or a jailbroken device. |
 | `ipatool is not signed in` | `ipatool auth login -e <apple-id>` |
-| Frida extract fails on a jailbroken device | Ensure `frida-server` is running as root and matches your Frida version (`frida --version`). |
+| Frida extract fails on a jailbroken device | Make sure `frida-server` is running and matches your Frida version. |
 
 ## Development
 
-```bash
-python -m unittest -v tests.test_offline     # offline tests, no device needed
+```
+python -m unittest -v tests.test_offline
 python -m compileall iph
 ```
-Tests are dependency-free and run in CI on Python 3.9–3.12.
 
-## Project layout
+Tests have no third-party dependencies and run in CI on Python 3.9–3.12.
 
-```
-bin/iph              launcher (uses the project venv)
-iph/cli.py           argparse CLI + dispatch
-iph/device.py        device discovery, info, DDI auto-mount
-iph/install.py       install (pymobiledevice3 → ideviceinstaller)
-iph/extract.py       strategy dispatch + installed-app listing + App Store download
-iph/frida_dump.py    Frida driver: spawn/attach, pull bundle, repackage
-iph/scripts/dump.js  Frida agent: in-memory Mach-O decryption (bridge-free)
-iph/ssh.py           SSH/SCP + iproxy transport for jailbroken devices
-tests/               offline unit tests
-```
+## Notes on use
 
-## ⚖️ Authorized use & disclaimer
+Use this on devices and apps you own or are allowed to test — your own builds, security
+research you're authorized to do, backups of apps you've licensed. Don't redistribute
+other people's decrypted apps. See [LICENSE](LICENSE).
 
-This tool is for **lawful, authorized** use only: your own devices and development builds,
-security research on apps you are permitted to analyze, and personal backups of apps you
-have licensed. You are responsible for complying with the laws that apply to you, the App
-Store terms, and each app's license. **Do not** redistribute other people's decrypted
-apps — that is copyright infringement. The software is provided "as is", without warranty;
-the author accepts no liability for misuse. See [LICENSE](LICENSE).
-
-## Credits
-
-Built on the shoulders of [Frida](https://frida.re),
+Built on [Frida](https://frida.re),
 [pymobiledevice3](https://github.com/doronz88/pymobiledevice3),
-[libimobiledevice](https://libimobiledevice.org), and
-[ipatool](https://github.com/majd/ipatool). The decryption approach follows the
-well-established technique pioneered by tools like `frida-ios-dump`.
+[libimobiledevice](https://libimobiledevice.org) and
+[ipatool](https://github.com/majd/ipatool).

@@ -104,12 +104,11 @@ class TestMachOContract(unittest.TestCase):
         self.assertEqual(self.parse(bytes(b))["cryptid"], 0)
 
     def test_overlay_and_clear_mechanics(self):
-        """Mirror of dump.js decryptModule's buffer ops: overlay the decrypted
-        pages over the encrypted region and clear cryptid, touching nothing else.
-        Verified against a real 34 MB App Store binary in-session; this locks the
-        mechanics into CI. Here cryptidFileOff (5392-style) < cryptoff, exactly
-        as in a real FairPlay binary, so clearing cryptid changes a byte *before*
-        the region — which must be allowed."""
+        """Matches dump.js decryptModule's buffer ops: overlay the decrypted
+        pages over the encrypted region and clear cryptid without touching
+        anything else. In a real FairPlay binary the cryptid field sits before
+        cryptoff, so clearing it changes a byte ahead of the region, which is
+        expected."""
         # Build a header whose cryptid field precedes the encrypted region.
         cryptoff, cryptsize = 16384, 4096
         hdr = struct.pack("<IiiIIIII", self.MH_MAGIC_64, 0x0100000c, 0, 2, 1, 0, 0, 0)
