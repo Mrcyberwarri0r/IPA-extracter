@@ -56,7 +56,8 @@ def list_installed_apps(dev: Device, *, user_only: bool = True) -> List[Installe
 
     idev = utils.which("ideviceinstaller")
     if idev:
-        proc = utils.run([idev, "-u", dev.udid, "-l", "-o", "list_user"], capture=True, check=False)
+        list_cmd = [idev, "-u", dev.udid, "list", "--user" if user_only else "--all"]
+        proc = utils.run(list_cmd, capture=True, check=False)
         for line in (proc.stdout or "").splitlines():
             line = line.strip()
             if not line or line.lower().startswith("total") or " - " not in line:

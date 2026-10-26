@@ -81,11 +81,12 @@ def install(ipa_path: str, dev: Device, *, upgrade: bool = False) -> None:
     # Backend 2: ideviceinstaller
     idev = utils.which("ideviceinstaller")
     if idev:
-        # ideviceinstaller's -i reinstalls/upgrades in place when already present.
-        cmd = [idev, "-u", dev.udid, "-i", ipa_path]
+        # v1.1+ uses subcommands: `install PATH` / `upgrade PATH`.
+        verb_cmd = "upgrade" if upgrade else "install"
+        cmd = [idev, "-u", dev.udid, verb_cmd, ipa_path]
         proc = utils.run(cmd, check=False, capture=True)
         out = (proc.stdout or "") + (proc.stderr or "")
-        if proc.returncode == 0 and "Complete" in out:
+        if proc.returncode == 0 and ("Complete" in out or "Install: Complete" in out):
             utils.ok("installed via ideviceinstaller")
             return
         errors.append("ideviceinstaller: " + out.strip())

@@ -92,9 +92,43 @@ def _open_session(frida, device, app, attach: bool, udid):
         if _needs_ddi(e):
             device_mod_attach(udid or device.id)
             session = device.attach(pid)
+        elif _is_not_debuggable(e):
+            # Clean up the suspended spawn we can't instrument.
+            if spawned:
+                _safe_kill(device, pid)
+            raise IphError(
+                f"cannot instrument '{app.identifier}' on this device.\n"
+                "Frida could launch it but not attach — the app is not debuggable "
+                "(no 'get-task-allow' entitlement). On a NON-jailbroken device that "
+                "is normal for App Store apps, so they cannot be decrypted here.\n"
+                "Options:\n"
+                "  • Decrypt it on a JAILBROKEN device (frida-server as root).\n"
+                "  • This path works on non-jailbroken devices only for apps YOU "
+                "signed (development / ad-hoc / sideloaded).\n"
+                "  • To just archive the App Store IPA (still encrypted), use:\n"
+                f"        iph extract {app.identifier} --method appstore"
+            ) from e
         else:
+            if spawned:
+                _safe_kill(device, pid)
             raise
     return session, pid, spawned
+
+
+def _is_not_debuggable(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return (
+        "unable to attach to the specified process" in msg
+        or "process is not debuggable" in msg
+        or "not permitted" in msg
+    )
+
+
+def _safe_kill(device, pid) -> None:
+    try:
+        device.kill(pid)
+    except Exception:
+        pass
 
 
 def device_mod_attach(udid):
