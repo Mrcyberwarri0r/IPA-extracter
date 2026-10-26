@@ -1,6 +1,16 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Tool output
 *.ipa
 *.stage/
+downloads/
+
+# OS
 .DS_Store

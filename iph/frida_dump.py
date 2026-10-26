@@ -167,7 +167,7 @@ def dump(
     bundle_name = meta["bundleName"]
     app_path = meta["appPath"]
     files = meta["files"]
-    encrypted = set(meta["encrypted"])
+    encrypted = set(api.encrypted_modules())
     utils.info(f"bundle: {bundle_name}  files: {len(files)}  encrypted Mach-Os: {len(encrypted)}")
     if not encrypted:
         utils.warn("no encrypted Mach-Os detected — binary may already be decrypted "

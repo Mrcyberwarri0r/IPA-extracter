@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -46,7 +47,16 @@ def step(msg: str) -> None:
 # Tool discovery
 # ----------------------------------------------------------------------------
 def which(name: str) -> Optional[str]:
-    return shutil.which(name)
+    """Find a tool on PATH, falling back to the directory of the running
+    interpreter (so venv-installed console scripts like pymobiledevice3 and the
+    frida tools are found even when the venv's bin dir is not on PATH)."""
+    found = shutil.which(name)
+    if found:
+        return found
+    sibling = os.path.join(os.path.dirname(sys.executable), name)
+    if os.path.isfile(sibling) and os.access(sibling, os.X_OK):
+        return sibling
+    return None
 
 
 def require(name: str, hint: str = "") -> str:
