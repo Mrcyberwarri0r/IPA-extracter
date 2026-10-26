@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Launcher: runs iph using the project's self-contained virtualenv.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="$HERE/.venv/bin/python"
+if [[ ! -x "$PY" ]]; then
+  echo "iph: virtualenv missing. Run: $HERE/install.sh" >&2
+  exit 1
+fi
+export PATH="$HERE/.venv/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+cd "$HERE"
+exec "$PY" -m iph "$@"

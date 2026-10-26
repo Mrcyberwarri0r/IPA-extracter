@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+*.ipa
+*.stage/
+.DS_Store
